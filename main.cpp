@@ -48,7 +48,7 @@ namespace window {
       row->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Fill));
 
       auto accessButton =
-      new Button(row, "Acesso Remoto", ENTYPO_ICON_);
+      new Button(row, "Acesso Remoto", ENTYPO_ICON_PUBLISH);
       
       //openButton->setFlags(Button::ToggleButton);
 
@@ -165,7 +165,7 @@ namespace window {
     gui->addGroup("");
 
     gui->addVariable("Usuário", username);
-    gui->addVariable("Senha", password, true, true);
+    gui->addVariable("Senha", password);
 
     gui->addGroup("");
 
