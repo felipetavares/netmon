@@ -33,3 +33,7 @@
 
 # Emacs backups
 *~
+
+# Executable byproducts
+conf
+netmon
