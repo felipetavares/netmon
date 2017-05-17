@@ -37,3 +37,6 @@
 # Executable byproducts
 conf
 netmon
+
+# Vim backups
+*.swp
