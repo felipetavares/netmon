@@ -24,6 +24,29 @@ namespace generate_screen {
 }
 
 namespace window {
+  Window* login (FormHelper *gui, string ip) {
+    Window* login =
+    new Window(screen, "Login em "+ip);
+
+    AdvancedGridLayout *layout =
+    dynamic_cast<AdvancedGridLayout*>(login->layout());
+
+    Label *label = new Label(login, "");
+    layout->appendRow(0);
+    layout->setAnchor(label, AdvancedGridLayout::Anchor(0, 0, 4, 1, Alignment::Middle, Alignment::Middle));
+
+    label->setColor(Color(200, 0, 0, 255));
+
+    gui->addGroup("");
+
+    gui->addVariable("Usuário", username);
+    gui->addVariable("Senha", password, true, true);
+
+    gui->addGroup("");
+
+    return login;
+  }
+
   Window* section (FormHelper *gui, Section *secDesc) {
     Window* section =
     new Window(screen, secDesc->name);
@@ -51,7 +74,9 @@ namespace window {
       new Button(row, "SSH", ENTYPO_ICON_PUBLISH);
 
       accessButton->setCallback([accessButton, gui, ip] {
-        std::system(("x-terminal-emulator -e \"bash -c 'ssh administrador@"+ip+"; read'\"").c_str());
+        Window* login = window::login();
+
+        std::system(("x-terminal-emulator -e /bin/bash -c 'ssh -XC administrador@"+ip+"; read'").c_str());
 
         //Window* section = window::section(gui, title);
 
@@ -71,7 +96,7 @@ namespace window {
       new Button(row, "VNC", ENTYPO_ICON_PUBLISH);
 
       graphicalAccessButton->setCallback([graphicalAccessButton, gui, ip] {
-        std::system(("x-terminal-emulator -e \"bash -c 'ssh administrador@"+ip+"; read'\"").c_str());
+        std::system(("x-terminal-emulator -e \"/bin/bash -c 'ssh administrador@"+ip+"; read'\"").c_str());
 
         //Window* section = window::section(gui, title);
 
@@ -187,7 +212,7 @@ namespace window {
     gui->addGroup("");
 
     gui->addVariable("Usuário", username);
-    gui->addVariable("Senha", password);
+    gui->addVariable("Senha", password, true, true);
 
     gui->addGroup("");
 
