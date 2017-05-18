@@ -54,9 +54,9 @@ string Configuration::generateSpaces (unsigned int n) {
 
 void Configuration::writeElement (Element *e) {
   // Real deal
-  //file << generateSpaces(e->level) << e->data << endl;
+  file << generateSpaces(e->level) << e->data << endl;
   // Debug
-  cout << generateSpaces(e->level) << e->data << endl;
+  //cout << generateSpaces(e->level) << e->data << endl;
 
   for (auto child :e->children) {
     writeElement(child);
