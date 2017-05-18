@@ -1,6 +1,8 @@
 #ifndef NETMON_DATA_H
 #define NETMON_DATA_H
 
+#include "conf.h"
+
 class Service {
  public:
   string name;
@@ -19,7 +21,10 @@ class IP {
   char ip[4];
  public:
   string asString();
-  char[4] asBytes();
+  char* asBytes();
+
+  IP();
+  IP(string);
 };
 
 class Server {
@@ -27,17 +32,24 @@ class Server {
   vector <Service> services;
   string name;
   IP ip;
+
+  Server(Element*);
 };
 
 class Host {
 public:
+  Host(Element*);
+
   string hostname;
-  string userName;
+  string user;
   IP ip;
 };
 
 class Section {
  public:
+  Section(Element*);
+  ~Section();
+
   string name;
   vector <Host*> hosts;
 };
@@ -48,5 +60,11 @@ class Network {
   vector<Server*> servers;
   vector<Section*> sections;
 
-  void fillData(Configuration*);
+  Network(Configuration*);
+  ~Network();
+ private:
+  Element* getServers(Element*);
+  Element* getSections(Element*);
 };
+
+#endif

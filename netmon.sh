@@ -2,7 +2,7 @@
 
 # Compile
 
-g++ -g -std=c++11 main.cpp -o netmon -I ../nanogui/ext/eigen/ -I ../nanogui/ext/glfw/include/ -I ../nanogui/ext/nanovg/src/ -lnanogui
+g++ -g -std=c++11 main.cpp conf.cpp network.cpp -o netmon -I ../nanogui/ext/eigen/ -I ../nanogui/ext/glfw/include/ -I ../nanogui/ext/nanovg/src/ -lnanogui
 
 # Run
 

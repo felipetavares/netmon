@@ -1,4 +1,4 @@
-#include "conf.h"
+#include "network.h"
 #include <iostream>
 #include <fstream>
 #include <stack>
@@ -6,7 +6,7 @@ using namespace std;
 
 Configuration::Configuration (string filename):
   filename(filename),
-  file(filename.c_str(), fstream::in | fstream::out) {  
+  file(filename.c_str(), fstream::in | fstream::out) {
 }
 
 Configuration::~Configuration () {
@@ -78,7 +78,7 @@ void Configuration::read () {
       delete e;
       continue;
     }
-    
+
     if (!estack.empty()) {
       if (estack.top()->level >= e->level) {
 	while (estack.top()->level >= e->level &&
@@ -90,7 +90,7 @@ void Configuration::read () {
     } else {
       root = e;
     }
-  
+
     estack.push(e);
   }
 }
@@ -107,7 +107,7 @@ void Configuration::deleteChildren(Element *e) {
 // of the line and return it
 string Configuration::dataOf(string& line) {
   unsigned int index = levelOf(line);
-  
+
   // Return a substring startig at the found index
   return line.substr(index);
 }
@@ -115,7 +115,7 @@ string Configuration::dataOf(string& line) {
 unsigned int Configuration::levelOf(string& line) {
   unsigned int lineSize = line.size();
   unsigned int index = 0;
-  
+
   // Find the index of the first non-whitespace character
   for (;index<lineSize;index++) {
     if (line[index] != ' ') {
@@ -124,17 +124,4 @@ unsigned int Configuration::levelOf(string& line) {
   }
 
   return index;
-}
-
-int main () {
-  cout << "NetMon Configuration File Reader" << endl;
-
-  auto conf = new Configuration("1bec.conf");
-
-  conf->read();
-  conf->write();
-  
-  delete conf;
-  
-  return 0;
 }

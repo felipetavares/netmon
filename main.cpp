@@ -1,6 +1,7 @@
 #include <nanogui/nanogui.h>
 #include <iostream>
 #include <cstdlib>
+#include "network.h"
 
 using namespace nanogui;
 
@@ -11,23 +12,23 @@ std::string password = "";
 Screen *screen;
 
 namespace window {
-  Window* sections(FormHelper*);
+  Window* sections(FormHelper*, Network*);
 }
 
 namespace generate_screen {
-  void main (FormHelper *gui) {
-    Window* sections = window::sections(gui);
-    
+  void main (FormHelper *gui, Network* net) {
+    Window* sections = window::sections(gui, net);
+
     screen->performLayout();
   }
 }
 
 namespace window {
-  Window* section (FormHelper *gui, std::string secName) {
+  Window* section (FormHelper *gui, Section *secDesc) {
     Window* section =
-    new Window(screen, "SEC " + secName);
+    new Window(screen, secDesc->name);
 
-    section->setPosition(Vector2i(250, 0));
+    section->setPosition(Vector2i(270, 10));
     section->setSize(Vector2i(200, 200));
     section->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Middle, 5, 10));
 
@@ -37,24 +38,21 @@ namespace window {
 
     vscroll->setFixedHeight(200);
 
-    for (unsigned int i=0;i<20;i++) {
+    for (unsigned int i=0;i<secDesc->hosts.size();i++) {
       Widget *spacer;
-      std::string ip = "10.56.72.";
-
-      for (unsigned int j=0;j<3;j++)
-        ip += char(rand()%3+'0');
+      std::string ip = secDesc->hosts[i]->ip.asString();
+      std::string user = secDesc->hosts[i]->user;
+      std::string hostname = secDesc->hosts[i]->hostname;
 
       auto row = new Widget(list);
       row->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Fill));
 
       auto accessButton =
-      new Button(row, "Acesso Remoto", ENTYPO_ICON_PUBLISH);
-      
-      //openButton->setFlags(Button::ToggleButton);
+      new Button(row, "SSH", ENTYPO_ICON_PUBLISH);
 
-      //openButton->setCallback([openButton, gui, title] {
-        //std::system("x-terminal-emulator -e \"bash -c 'ssh administrador@localhost; read'\"");
-        
+      accessButton->setCallback([accessButton, gui, ip] {
+        std::system(("x-terminal-emulator -e \"bash -c 'ssh administrador@"+ip+"; read'\"").c_str());
+
         //Window* section = window::section(gui, title);
 
         //openButton->setChangeCallback([section] (bool on) {
@@ -63,39 +61,61 @@ namespace window {
         //  }
         //});
 
-        //screen->performLayout();
-     //});
+        screen->performLayout();
+      });
 
-      //spacer = new Widget(row);
-      //spacer->setFixedWidth(6);
+      spacer = new Widget(row);
+      spacer->setFixedWidth(6);
+
+      auto graphicalAccessButton =
+      new Button(row, "VNC", ENTYPO_ICON_PUBLISH);
+
+      graphicalAccessButton->setCallback([graphicalAccessButton, gui, ip] {
+        std::system(("x-terminal-emulator -e \"bash -c 'ssh administrador@"+ip+"; read'\"").c_str());
+
+        //Window* section = window::section(gui, title);
+
+        //openButton->setChangeCallback([section] (bool on) {
+        //  if (!on) {
+        //    section->dispose();
+        //  }
+        //});
+
+        screen->performLayout();
+      });
+
+      spacer = new Widget(row);
+      spacer->setFixedWidth(6);
 
       //auto infoButton =
       //new Button(row, "", ENTYPO_ICON_INFO);
 
       //infoButton->setFlags(Button::ToggleButton);
 
-      //spacer = new Widget(row);
-      //spacer->setFixedWidth(6);
 
       new Label(row, ip);
+
+      spacer = new Widget(row);
+      spacer->setFixedWidth(6);
+
+      new Label(row, hostname);
+
+      spacer = new Widget(row);
+      spacer->setFixedWidth(6);
+
+      new Label(row, user);
+
+      spacer = new Widget(row);
+      spacer->setFixedWidth(6);
     }
 
     return section;
   }
 
-  Window* sections (FormHelper *gui) {
-    std::string sectionNames[] = {
-      "OP PIPA",
-      "SIP",
-      "S1",
-      "S2",
-      "S3",
-      "S4"
-    };
-
+  Window* sections (FormHelper *gui, Network *net) {
     Window* sections =
     new Window(screen, "SEÇÕES");
-    
+
     sections->setPosition(Vector2i(10, 10));
     sections->setSize(Vector2i(200, 200));
     sections->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Middle, 5, 10));
@@ -106,22 +126,24 @@ namespace window {
 
     vscroll->setFixedHeight(300);
 
-    for (unsigned int i=0;i<6;i++) {
-      Widget *spacer;      
-      std::string title = sectionNames[i];
+    for (unsigned int i=0;i<net->sections.size();i++) {
+      Widget *spacer;
+      std::string title = net->sections[i]->name;
 
       auto row = new Widget(list);
       row->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Fill));
 
       auto openButton =
       new Button(row, "Acessar", ENTYPO_ICON_ARCHIVE);
-      
+
       openButton->setFlags(Button::ToggleButton);
 
-      openButton->setCallback([openButton, gui, title] {
+      auto sectionDescription = net->sections[i];
+
+      openButton->setCallback([openButton, gui, sectionDescription] {
         //std::system("x-terminal-emulator -e \"bash -c 'ssh administrador@localhost; read'\"");
-        
-        Window* section = window::section(gui, title);
+
+        Window* section = window::section(gui, sectionDescription);
 
         openButton->setChangeCallback([section] (bool on) {
           if (!on) {
@@ -149,10 +171,10 @@ namespace window {
     return sections;
   }
 
-  Window* blocked (FormHelper *gui) {
+  Window* blocked (FormHelper *gui, Network *net) {
     Window* blocked =
-    gui->addWindow(Eigen::Vector2i(0, 0), "Bloqueado");
-    
+    gui->addWindow(Eigen::Vector2i(0, 0), "NetMon 1° BEC");
+
     AdvancedGridLayout *layout =
     dynamic_cast<AdvancedGridLayout*>(blocked->layout());
 
@@ -169,17 +191,17 @@ namespace window {
 
     gui->addGroup("");
 
-    gui->addButton("Desbloquear", [label, blocked, gui]() {
+    gui->addButton("Desbloquear", [label, blocked, gui, net]() {
       if (username == "administrador" && password == "AsitotnB") {
         // Start App
         blocked->dispose();
 
-        generate_screen::main(gui);
+        generate_screen::main(gui, net);
       } else {
         // Show error
         label->setCaption("Usuário/Senha inválidos");
         screen->performLayout();
-      }      
+      }
     });
 
     return blocked;
@@ -187,24 +209,41 @@ namespace window {
 }
 
 int main(int, char **) {
-    nanogui::init();
+  cout << "NetMon v0.1" << endl;
 
-    {
-        screen =
-        new Screen(Vector2i(800, 600), "NetMon", false, false /* fullscreen */);
+  // Read configuration file
+  auto conf = new Configuration("1bec.conf");
+  conf->read();
+  // Create a network description
+  // from the configuration
+  auto net = new Network(conf);
 
-        bool enabled = true;
-        FormHelper *gui = new FormHelper(screen);
-        Window* blocked = window::blocked(gui);
-        
-        screen->setVisible(true);
-        screen->performLayout();
-        
-        blocked->center();
+  nanogui::init();
 
-        nanogui::mainloop();
-    }
+  {
+    screen =
+    new Screen(Vector2i(800, 600), "NetMon", false, false /* fullscreen */);
 
-    nanogui::shutdown();
-    return 0;
+    bool enabled = true;
+    FormHelper *gui = new FormHelper(screen);
+    Window* blocked = window::blocked(gui, net);
+
+    screen->setVisible(true);
+    screen->performLayout();
+
+    blocked->center();
+
+    nanogui::mainloop();
+  }
+
+  // Write any changes in configuration
+  // TODO: DO THIS AT THE TIME OF THE CHANGE
+  conf->write();
+
+  nanogui::shutdown();
+
+  delete net;
+  delete conf;
+
+  return 0;
 }
