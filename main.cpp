@@ -1,6 +1,8 @@
 #include <nanogui/nanogui.h>
 #include <iostream>
 #include <cstdlib>
+#include <thread>
+#include <chrono>
 #include "network.h"
 
 using namespace nanogui;
@@ -28,36 +30,42 @@ namespace window {
     Window* login =
     gui->addWindow(Eigen::Vector2i(0, 0), "Login em "+ip);
 
-    std::string username = "administrador";
-    std::string password = "AsitotnB";
-    bool graphicAccess;
+    std::string *username = new string("administrador");
+    std::string *program = new string("bash");
+    bool *graphicAccess = new bool(false);
 
     AdvancedGridLayout *layout =
     dynamic_cast<AdvancedGridLayout*>(login->layout());
 
     gui->addGroup("");
 
-    gui->addVariable("Usuário", username);
-    gui->addVariable("Senha", password, true, true);
+    gui->addVariable("Usuário", *username);
+    gui->addVariable("Programa", *program);
 
     gui->addGroup("");
 
-    gui->addVariable("X11", graphicAccess);
+    gui->addVariable("X11", *graphicAccess);
 
     gui->addGroup("");
 
-    gui->addButton("Logar", [login, ip, username, graphicAccess]() {
-      std::string arguments = graphicAccess?"-XC":"";
+    gui->addButton("Logar", [login, ip, username, program, graphicAccess]() {
+      std::string arguments = (*graphicAccess)?"-XC":"";
 
       std::system(
         (
-          "xterm -e /bin/bash -c 'ssh "+
+          "xterm -e "+
+          (*program)+
+          " -c 'ssh "+
           arguments+
           " "+
-          username+"@"+ip+
+          (*username)+"@"+ip+
           "; read'")
         .c_str()
       );
+
+      delete username;
+      delete program;
+      delete graphicAccess;
 
       login->dispose();
     });
@@ -66,16 +74,24 @@ namespace window {
   }
 
   Window* section (FormHelper *gui, Section *secDesc) {
+    cout << "] " << secDesc->up() << endl;
+
     Window* section =
     new Window(screen, secDesc->name);
 
     section->setPosition(Vector2i(270, 10));
     section->setSize(Vector2i(200, 200));
-    section->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Middle, 5, 10));
+    section->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Fill, 5, 10));
+
+    new Label(section, "Computadores Ativos");
+    auto hostsUp = new ProgressBar(section);
+
+    hostsUp->setValue((float)secDesc->up()/(float)secDesc->hosts.size());
 
     VScrollPanel *vscroll = new VScrollPanel(section);
     Widget *list = new Widget(vscroll);
-    list->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Minimum, 5, 10));
+    auto layout = new AdvancedGridLayout({}, {}, 0);
+    list->setLayout(layout);
 
     vscroll->setFixedHeight(200);
 
@@ -84,14 +100,16 @@ namespace window {
       std::string ip = secDesc->hosts[i]->ip.asString();
       std::string user = secDesc->hosts[i]->user;
       std::string hostname = secDesc->hosts[i]->hostname;
+      bool up = secDesc->hosts[i]->up;
 
-      auto row = new Widget(list);
-      row->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Fill));
+      layout->appendRow(0);
+      layout->appendCol(0);
 
       auto accessButton =
-      new Button(row, "SSH", ENTYPO_ICON_PUBLISH);
+      new Button(list, "SSH", ENTYPO_ICON_PUBLISH);
+      layout->setAnchor(accessButton, AdvancedGridLayout::Anchor(0, i*2, 1, 1, Alignment::Minimum, Alignment::Middle));
 
-      accessButton->setCallback([accessButton, gui, ip] {
+      accessButton->setCallback([accessButton, gui, ip, up] {
         Window* login = window::login(gui, ip);
 
         screen->performLayout();
@@ -99,50 +117,60 @@ namespace window {
         login->center();
       });
 
-      spacer = new Widget(row);
+      layout->appendCol(0);
+      spacer = new Widget(list);
       spacer->setFixedWidth(6);
+      layout->setAnchor(spacer, AdvancedGridLayout::Anchor(1, i*2, 1, 1, Alignment::Middle, Alignment::Middle));
 
-      auto graphicalAccessButton =
-      new Button(row, "VNC", ENTYPO_ICON_PUBLISH);
+      layout->appendCol(0);
+      auto ipLabel = new Label(list, ip);
+      layout->setAnchor(ipLabel, AdvancedGridLayout::Anchor(2, i*2, 1, 1, Alignment::Minimum, Alignment::Middle));
 
-      graphicalAccessButton->setCallback([graphicalAccessButton, gui, ip] {
-        std::system(("x-terminal-emulator -e \"/bin/bash -c 'ssh administrador@"+ip+"; read'\"").c_str());
-
-        //Window* section = window::section(gui, title);
-
-        //openButton->setChangeCallback([section] (bool on) {
-        //  if (!on) {
-        //    section->dispose();
-        //  }
-        //});
-
-        screen->performLayout();
-      });
-
-      spacer = new Widget(row);
+      layout->appendCol(0);
+      spacer = new Widget(list);
       spacer->setFixedWidth(6);
+      layout->setAnchor(spacer, AdvancedGridLayout::Anchor(3, i*2, 1, 1, Alignment::Middle, Alignment::Middle));
 
-      //auto infoButton =
-      //new Button(row, "", ENTYPO_ICON_INFO);
+      layout->appendCol(0);
+      auto hostnameLabel = new Label(list, hostname);
+      layout->setAnchor(hostnameLabel, AdvancedGridLayout::Anchor(4, i*2, 1, 1, Alignment::Minimum, Alignment::Middle));
 
-      //infoButton->setFlags(Button::ToggleButton);
-
-
-      new Label(row, ip);
-
-      spacer = new Widget(row);
+      layout->appendCol(0);
+      spacer = new Widget(list);
       spacer->setFixedWidth(6);
+      layout->setAnchor(spacer, AdvancedGridLayout::Anchor(5, i*2, 1, 1, Alignment::Middle, Alignment::Middle));
 
-      new Label(row, hostname);
+      layout->appendCol(0);
+      auto userLabel = new Label(list, user);
+      layout->setAnchor(userLabel, AdvancedGridLayout::Anchor(6, i*2, 1, 1, Alignment::Minimum, Alignment::Middle));
 
-      spacer = new Widget(row);
+      layout->appendCol(0);
+      spacer = new Widget(list);
       spacer->setFixedWidth(6);
+      layout->setAnchor(spacer, AdvancedGridLayout::Anchor(7, i*2, 1, 1, Alignment::Middle, Alignment::Middle));
 
-      new Label(row, user);
+      layout->appendCol(0);
+      auto pingLabel = new Label(list, up?"UP":"DOWN");
+      layout->setAnchor(pingLabel, AdvancedGridLayout::Anchor(8, i*2, 1, 1, Alignment::Minimum, Alignment::Middle));
 
-      spacer = new Widget(row);
+      if (up) {
+        pingLabel->setColor(Color(0, 200, 0, 255));
+      } else {
+        pingLabel->setColor(Color(200, 0, 0, 255));
+      }
+
+      layout->appendCol(0);
+      spacer = new Widget(list);
       spacer->setFixedWidth(6);
+      layout->setAnchor(spacer, AdvancedGridLayout::Anchor(9, i*2, 1, 1, Alignment::Middle, Alignment::Middle));
+
+      layout->appendRow(0);
+      spacer = new Widget(list);
+      spacer->setFixedHeight(6);
+      layout->setAnchor(spacer, AdvancedGridLayout::Anchor(0, i*2+1, 4, 1, Alignment::Middle, Alignment::Middle));
     }
+
+    section->center();
 
     return section;
   }
@@ -188,14 +216,6 @@ namespace window {
 
         screen->performLayout();
      });
-
-      spacer = new Widget(row);
-      spacer->setFixedWidth(6);
-
-      auto infoButton =
-      new Button(row, "", ENTYPO_ICON_INFO);
-
-      infoButton->setFlags(Button::ToggleButton);
 
       spacer = new Widget(row);
       spacer->setFixedWidth(6);
@@ -253,11 +273,25 @@ int main(int, char **) {
   // from the configuration
   auto net = new Network(conf);
 
+  thread pinger([net]() {
+    while (true) {
+      for (auto s :net->sections) {
+        for (auto h :s->hosts) {
+          h->ping();
+        }
+      }
+
+      std::this_thread::sleep_for(std::chrono::seconds(30));
+    }
+  });
+
+  pinger.detach();
+
   nanogui::init();
 
   {
     screen =
-    new Screen(Vector2i(800, 600), "NetMon", false, false /* fullscreen */);
+    new Screen(Vector2i(800, 600), "NetMon", true, false /* fullscreen */);
 
     bool enabled = true;
     FormHelper *gui = new FormHelper(screen);

@@ -2,6 +2,7 @@
 #define NETMON_DATA_H
 
 #include "conf.h"
+#include <chrono>
 
 class Service {
  public:
@@ -18,10 +19,10 @@ class Service {
 };
 
 class IP {
-  char ip[4];
+  unsigned char ip[4];
  public:
   string asString();
-  char* asBytes();
+  unsigned char* asBytes();
 
   IP();
   IP(string);
@@ -43,12 +44,21 @@ public:
   string hostname;
   string user;
   IP ip;
+  bool up;
+
+  void ping();
+
+  bool pinging;
+  chrono::system_clock::time_point pingTime;
+  chrono::system_clock::time_point replyTime;
 };
 
 class Section {
  public:
   Section(Element*);
   ~Section();
+
+  unsigned int up();
 
   string name;
   vector <Host*> hosts;
@@ -62,6 +72,8 @@ class Network {
 
   Network(Configuration*);
   ~Network();
+
+  unsigned int up();
  private:
   Element* getServers(Element*);
   Element* getSections(Element*);

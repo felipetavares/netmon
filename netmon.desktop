@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Path=/home/felipe/Development/netmon/
+Exec=/home/felipe/Development/netmon/netmon
+Icon=/home/felipe/Development/netmon/netmon.png
+Name=NetMon Beta
+GenericName=Monitor de Rede e Acesso Remoto
+Comment=EB
+Terminal=false
+Type=Application
+Categories=Network;Tools

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <thread>
+#include <chrono>
 #include "network.h"
 
 // Network
@@ -66,6 +68,16 @@ Network::~Network() {
   }
 }
 
+unsigned int Network::up () {
+  unsigned int n = 0;
+
+  for (auto s :sections) {
+    n += s->up();
+  }
+
+  return n;
+}
+
 // Section
 
 Section::Section (Element *raw) {
@@ -82,9 +94,19 @@ Section::~Section () {
   }
 }
 
+unsigned int Section::up () {
+  unsigned int n = 0;
+
+  for (auto h :hosts) {
+    n += (unsigned int)h->up;
+  }
+
+  return n;
+}
+
 // Host
 
-Host::Host (Element *raw) {
+Host::Host (Element *raw): up(false) {
   if (raw->children.size() != 2) {
     cout << "Erro: número de entradas em host inválido." << endl;
   } else {
@@ -93,6 +115,30 @@ Host::Host (Element *raw) {
     user = raw->children[0]->data;
     ip = IP(raw->children[1]->data);
   }
+}
+
+void Host::ping () {
+  if (pinging)
+    return;
+
+  pinging = true;
+  pingTime = chrono::system_clock::now();
+
+  thread t([&]() {
+    int ret = system(("ping "+ip.asString()+" -c 1").c_str());
+
+    replyTime = chrono::system_clock::now();
+
+    if (ret == 0) {
+      up = true;
+    } else {
+      up = false;
+    }
+
+    pinging = false;
+  });
+
+  t.detach();
 }
 
 // IP
@@ -135,7 +181,7 @@ string IP::asString() {
   return maker.str();
 }
 
-char* IP::asBytes() {
+unsigned char* IP::asBytes() {
   return ip;
 }
 
