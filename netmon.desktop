@@ -1,8 +1,8 @@
 [Desktop Entry]
 Version=1.0
-Path=/home/felipe/Development/netmon/
-Exec=/home/felipe/Development/netmon/netmon
-Icon=/home/felipe/Development/netmon/netmon.png
+Path=/home/usuario/Development/netmon.gui/
+Exec=/home/usuario/Development/netmon.gui/netmon
+Icon=/home/usuario/Development/netmon.gui/netmon.png
 Name=NetMon Beta
 GenericName=Monitor de Rede e Acesso Remoto
 Comment=EB

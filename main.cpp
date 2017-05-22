@@ -15,11 +15,13 @@ Screen *screen;
 
 namespace window {
   Window* sections(FormHelper*, Network*);
+  Window* servers(FormHelper*, Network*);
 }
 
 namespace generate_screen {
   void main (FormHelper *gui, Network* net) {
     Window* sections = window::sections(gui, net);
+    Window* servers = window::servers(gui, net);
 
     screen->performLayout();
   }
@@ -48,7 +50,13 @@ namespace window {
 
     gui->addGroup("");
 
+    gui->addButton("Cancelar", [login]() {
+      login->dispose();
+    });
+
     gui->addButton("Logar", [login, ip, username, program, graphicAccess]() {
+      login->dispose();
+
       std::string arguments = (*graphicAccess)?"-XC":"";
 
       std::system(
@@ -59,23 +67,67 @@ namespace window {
           arguments+
           " "+
           (*username)+"@"+ip+
-          "; read'")
+          "; read' &")
         .c_str()
       );
 
       delete username;
       delete program;
       delete graphicAccess;
-
-      login->dispose();
     });
 
     return login;
   }
 
-  Window* section (FormHelper *gui, Section *secDesc) {
-    cout << "] " << secDesc->up() << endl;
+  Window* servers (FormHelper *gui, Network *net) {
+    Window* servers =
+    new Window(screen, "SERVIDORES");
 
+    servers->setPosition(Vector2i(20, 20));
+    servers->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Fill, 5, 10));
+
+    VScrollPanel *vscroll = new VScrollPanel(servers);
+    Widget *list = new Widget(vscroll);
+    list->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Minimum, 5, 10));
+
+    vscroll->setFixedHeight(300);
+
+    for (unsigned int i=0;i<net->servers.size();i++) {
+      Widget *spacer;
+      std::string title = net->servers[i]->name;
+      std::string ip = net->servers[i]->ip.asString();
+      auto row = new Widget(list);
+      row->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Fill));
+
+      auto openButton =
+      new Button(row, "SSH", ENTYPO_ICON_PUBLISH);
+
+      auto serverDescription = net->servers[i];
+
+      openButton->setCallback([openButton, gui, serverDescription, ip] {
+        std::system(
+          (
+            string("xterm -e ")+
+            string("bash")+ // shell
+            string(" -c 'ssh ")+
+            string("")+ // arguments
+            string(" ")+
+            (serverDescription->username)+"@"+ip+
+            string("; read' &"))
+          .c_str()
+        );
+      });
+
+      spacer = new Widget(row);
+      spacer->setFixedWidth(6);
+
+      new Label(row, title);
+    }
+
+    return servers;
+  }
+
+  Window* section (FormHelper *gui, Section *secDesc) {
     Window* section =
     new Window(screen, secDesc->name);
 
@@ -228,7 +280,7 @@ namespace window {
 
   Window* blocked (FormHelper *gui, Network *net) {
     Window* blocked =
-    gui->addWindow(Eigen::Vector2i(0, 0), "NetMon 1° BEC");
+    gui->addWindow(Eigen::Vector2i(0, 0), "Login NetMon");
 
     AdvancedGridLayout *layout =
     dynamic_cast<AdvancedGridLayout*>(blocked->layout());
@@ -291,7 +343,7 @@ int main(int, char **) {
 
   {
     screen =
-    new Screen(Vector2i(800, 600), "NetMon", true, false /* fullscreen */);
+    new Screen(Vector2i(800, 600), "Rede "+net->name, true, false /* fullscreen */);
 
     bool enabled = true;
     FormHelper *gui = new FormHelper(screen);

@@ -32,6 +32,7 @@ class Server {
  public:
   vector <Service> services;
   string name;
+  string username;
   IP ip;
 
   Server(Element*);

@@ -190,9 +190,10 @@ unsigned char* IP::asBytes() {
 Server::Server (Element* raw) {
   name = raw->data;
 
-  if (raw->children.size() == 1) {
-    ip = IP(raw->children[0]->data);
+  if (raw->children.size() == 2) {
+    username = raw->children[0]->data;
+    ip = IP(raw->children[1]->data);
   } else {
-    cout << "Erro: servidor sem ip." << endl;
+    cout << "Erro: servidor sem ip ou usuário." << endl;
   }
 }
