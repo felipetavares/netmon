@@ -3,7 +3,9 @@
 #include <sstream>
 #include <thread>
 #include <chrono>
+#include <iomanip>
 #include "network.h"
+#include "update.h"
 
 // Network
 
@@ -80,6 +82,10 @@ unsigned int Network::up () {
 
 // Section
 
+Section::Section (string name) {
+  this->name = name;
+}
+
 Section::Section (Element *raw) {
   name = raw->data;
 
@@ -104,16 +110,28 @@ unsigned int Section::up () {
   return n;
 }
 
+void Section::addUpdater (unsigned long updater) {
+  updaters.push_back(updater);
+}
+
+void Section::removeUpdaters () {
+  for (auto u :updaters) {
+    update::remove(u);
+  }
+  updaters.clear();
+}
+
 // Host
 
 Host::Host (Element *raw): up(false) {
-  if (raw->children.size() != 2) {
+  if (raw->children.size() != 3) {
     cout << "Erro: número de entradas em host inválido." << endl;
   } else {
     hostname = raw->data;
 
     user = raw->children[0]->data;
     ip = IP(raw->children[1]->data);
+    mac = MAC(raw->children[2]->data);
   }
 }
 
@@ -125,7 +143,7 @@ void Host::ping () {
   pingTime = chrono::system_clock::now();
 
   thread t([&]() {
-    int ret = system(("ping "+ip.asString()+" -c 1").c_str());
+    int ret = system(("ping "+ip.asString()+" -c 1 2>/dev/null 1>/dev/null").c_str());
 
     replyTime = chrono::system_clock::now();
 
@@ -139,6 +157,51 @@ void Host::ping () {
   });
 
   t.detach();
+}
+
+// MAC
+
+MAC::MAC(string raw) {
+  vector <unsigned int> positions;
+  unsigned int rawSize = raw.size();
+
+  positions.push_back(0);
+
+  for (unsigned int i=0;i<rawSize;i++) {
+    if(raw[i] == ':') {
+      positions.push_back(i+1);
+    }
+  }
+
+  if (positions.size() != 6) {
+    cout << "Erro: MAC inválido." << endl;
+    return;
+  }
+
+  for (unsigned int i=0;i<6;i++) {
+    mac[i] = stoi(raw.substr(positions[i]), nullptr, 16);
+  }
+}
+
+MAC::MAC () {
+
+}
+
+string MAC::asString() {
+  stringstream maker;
+
+  maker << std::setfill('0') << std::hex << std::setw(2);
+
+  maker << (int)mac[0] << ':';
+  maker << (int)mac[1] << ':';
+  maker << (int)mac[2] << ':';
+  maker << (int)mac[3];
+
+  return maker.str();
+}
+
+unsigned char* MAC::asBytes() {
+  return mac;
 }
 
 // IP

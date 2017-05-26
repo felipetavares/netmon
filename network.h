@@ -28,6 +28,16 @@ class IP {
   IP(string);
 };
 
+class MAC {
+  unsigned char mac[6];
+ public:
+  string asString();
+  unsigned char* asBytes();
+
+  MAC();
+  MAC(string);
+};
+
 class Server {
  public:
   vector <Service> services;
@@ -45,6 +55,7 @@ public:
   string hostname;
   string user;
   IP ip;
+  MAC mac;
   bool up;
 
   void ping();
@@ -56,13 +67,18 @@ public:
 
 class Section {
  public:
+  Section(string);
   Section(Element*);
   ~Section();
 
   unsigned int up();
 
+  void addUpdater(unsigned long);
+  void removeUpdaters();
+
   string name;
   vector <Host*> hosts;
+  vector <unsigned long> updaters;
 };
 
 class Network {
