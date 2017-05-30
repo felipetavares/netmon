@@ -80,6 +80,22 @@ unsigned int Network::up () {
   return n;
 }
 
+void Network::write (ostream &out) {
+  out << name << endl;
+
+  out << " SERVIDORES" << endl;
+
+  for (auto server :servers) {
+    server->write(out);
+  }
+
+  out << " SEÇÕES" << endl;
+
+  for (auto section :sections) {
+    section->write(out);
+  }
+}
+
 // Section
 
 Section::Section (string name) {
@@ -97,6 +113,14 @@ Section::Section (Element *raw) {
 Section::~Section () {
   for (auto h :hosts) {
     delete h;
+  }
+}
+
+void Section::write (ostream &out) {
+  out << "  " << name << endl;
+
+  for (auto host :hosts) {
+    host->write(out);
   }
 }
 
@@ -159,6 +183,13 @@ void Host::ping () {
   t.detach();
 }
 
+void Host::write (ostream &out) {
+  out << "    " << hostname << endl;
+  out << "     " << user << endl;
+  out << "     " << ip.asString() << endl;
+  out << "     " << mac.asString() << endl;
+}
+
 // MAC
 
 MAC::MAC(string raw) {
@@ -190,12 +221,14 @@ MAC::MAC () {
 string MAC::asString() {
   stringstream maker;
 
-  maker << std::setfill('0') << std::hex << std::setw(2);
+  maker << std::setfill('0') << std::hex;
 
-  maker << (int)mac[0] << ':';
-  maker << (int)mac[1] << ':';
-  maker << (int)mac[2] << ':';
-  maker << (int)mac[3];
+  maker << std::setw(2) << (int)mac[0] << ':';
+  maker << std::setw(2) << (int)mac[1] << ':';
+  maker << std::setw(2) << (int)mac[2] << ':';
+  maker << std::setw(2) << (int)mac[3] << ':';
+  maker << std::setw(2) << (int)mac[4] << ':';
+  maker << std::setw(2) << (int)mac[5];
 
   return maker.str();
 }
@@ -259,4 +292,10 @@ Server::Server (Element* raw) {
   } else {
     cout << "Erro: servidor sem ip ou usuário." << endl;
   }
+}
+
+void Server::write (ostream &out) {
+  out << "  " << name << endl;
+  out << "   " << username << endl;
+  out << "   " << ip.asString() << endl;
 }

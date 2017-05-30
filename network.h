@@ -46,6 +46,7 @@ class Server {
   IP ip;
 
   Server(Element*);
+  void write(ostream&);
 };
 
 class Host {
@@ -59,6 +60,7 @@ public:
   bool up;
 
   void ping();
+  void write(ostream&);
 
   bool pinging;
   chrono::system_clock::time_point pingTime;
@@ -75,6 +77,7 @@ class Section {
 
   void addUpdater(unsigned long);
   void removeUpdaters();
+  void write(ostream&);
 
   string name;
   vector <Host*> hosts;
@@ -91,6 +94,8 @@ class Network {
   ~Network();
 
   unsigned int up();
+
+  void write(ostream&);
  private:
   Element* getServers(Element*);
   Element* getSections(Element*);

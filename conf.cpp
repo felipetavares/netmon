@@ -10,6 +10,8 @@ Configuration::Configuration (string filename):
 }
 
 Configuration::~Configuration () {
+  file.close();
+
   if (root != NULL) {
     deleteChildren(root);
     root = NULL;

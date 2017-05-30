@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <thread>
 #include <chrono>
+#include "main.h"
+#include "gui.h"
 #include "network.h"
 #include "update.h"
 
@@ -16,12 +18,6 @@ std::string username = "administrador";
 std::string password = "";
 
 Screen *screen;
-
-namespace window {
-  Window* sections(FormHelper*, Network*);
-  Window* servers(FormHelper*, Network*);
-  Window* update_sections(FormHelper*, Network*, Window*);
-}
 
 namespace generate_screen {
   void main (FormHelper *gui, Network* net) {
@@ -67,11 +63,11 @@ namespace window {
     return newhost;
   }
 
-  Window* newsection (FormHelper *gui, Network* net, Window* sections) {
+  Window* newsection (FormHelper *gui, Network* net, Window* sections, SectionsWindow *secWindow) {
     Window* newsection =
     gui->addWindow(Eigen::Vector2i(0, 0), "Adicionar seção");
 
-    std::string *name = new string("Nome da seção");
+    std::string *name = new string("Nome");
 
     gui->addGroup("Geral");
 
@@ -84,12 +80,12 @@ namespace window {
       delete name;
     });
 
-    gui->addButton("Criar", [newsection, name, gui, net, sections]() {
-      net->sections.push_back(new Section(*name));
-
-      window::update_sections(gui, net, sections);
-
+    gui->addButton("Criar", [newsection, name, gui, net, secWindow]() {
+      auto newSection = new Section(*name);
+      net->sections.push_back(newSection);
+      secWindow->addSection(gui, newSection);
       newsection->dispose();
+      screen->performLayout();
       delete name;
     });
 
@@ -390,66 +386,9 @@ namespace window {
   }
 
   Window* sections (FormHelper *gui, Network *net) {
-    Window* sections =
-    new Window(screen, "SEÇÕES");
+    SectionsWindow *sections = new SectionsWindow(gui, net);
 
-    sections->setPosition(Vector2i(0, 0));
-    sections->setSize(Vector2i(200, 200));
-    sections->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Fill, 5, 10));
-
-    auto addButton =
-    new Button(sections, "", ENTYPO_ICON_PLUS);
-
-    addButton->setCallback([gui, net, sections]() {
-      Window *newSection = window::newsection(gui, net, sections);
-      screen->performLayout();
-    });
-
-    VScrollPanel *vscroll = new VScrollPanel(sections);
-    Widget *list = new Widget(vscroll);
-    list->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Minimum, 0, 0));
-
-    vscroll->setFixedHeight(600);
-
-    for (unsigned int i=0;i<net->sections.size();i++) {
-      Widget *spacer;
-      std::string title = net->sections[i]->name;
-
-      auto row = new Widget(list);
-      row->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Fill));
-
-      auto openButton =
-      new Button(row, "Acessar", ENTYPO_ICON_ARCHIVE);
-
-      openButton->setFlags(Button::ToggleButton);
-
-      auto sectionDescription = net->sections[i];
-
-      openButton->setCallback([openButton, gui, sectionDescription] {
-        //std::system("x-terminal-emulator -e \"bash -c 'ssh administrador@localhost; read'\"");
-
-        Window* section = window::section(gui, sectionDescription);
-
-        openButton->setChangeCallback([section, sectionDescription] (bool on) {
-          if (!on) {
-            sectionDescription->removeUpdaters();
-            section->dispose();
-          }
-        });
-
-        screen->performLayout();
-      });
-
-      spacer = new Widget(row);
-      spacer->setFixedWidth(6);
-
-      new Label(row, title);
-
-      spacer = new Widget(list);
-      spacer->setFixedHeight(6);
-    }
-
-    return sections;
+    return sections->window;
   }
 
   Window* blocked (FormHelper *gui, Network *net) {
@@ -542,9 +481,14 @@ int main(int, char **) {
     nanogui::mainloop();
   }
 
-  // Write any changes in configuration
-  // TODO: DO THIS AT THE TIME OF THE CHANGE
-  conf->write();
+  filebuf fb;
+  fb.open("1bec.conf", ios::out);
+
+  ostream out(&fb);
+
+  net->write(out);
+
+  fb.close();
 
   nanogui::shutdown();
 
